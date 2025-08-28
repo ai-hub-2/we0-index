@@ -31,7 +31,6 @@ async def lifespan(server: Server[LifespanResultT, RequestT]) -> AsyncIterator[o
 def create_fast_mcp() -> FastMCP:
     app = FastMCP(
         name="We0 Index",
-        description="CodeIndex, embedding, retrieval, Tool parameters must be in standard JSON format",
         tools=[
             Tool.from_function(clone_and_index),
             Tool.from_function(retrieval),
