@@ -18,7 +18,10 @@ export async function onRequest(context) {
   const originBase = env.ORIGIN_URL;
   if (!originBase) {
     return new Response(
-      JSON.stringify({ error: "Missing ORIGIN_URL environment variable" }),
+      JSON.stringify({ 
+        error: "Missing ORIGIN_URL environment variable",
+        message: "Please set ORIGIN_URL in Cloudflare Pages environment variables"
+      }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
@@ -43,10 +46,17 @@ export async function onRequest(context) {
 
   let upstreamResponse;
   try {
+    console.log(`Proxying ${request.method} ${incomingUrl.pathname} to ${targetUrl.toString()}`);
     upstreamResponse = await fetch(targetUrl.toString(), init);
   } catch (error) {
+    console.error(`Proxy error: ${error.message}`);
     return new Response(
-      JSON.stringify({ error: "Upstream fetch failed", details: String(error) }),
+      JSON.stringify({ 
+        error: "Upstream fetch failed", 
+        details: String(error),
+        target: targetUrl.toString(),
+        message: "Check if your backend is running and accessible"
+      }),
       { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
