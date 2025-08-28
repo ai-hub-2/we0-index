@@ -161,3 +161,34 @@ If you encounter any issues, please [create an issue](https://github.com/we0-dev
 ---
 
 **Made with ❤️ by the We0-dev Team**
+
+## Deploy to Cloudflare Pages (Free)
+
+This repository includes a zero-change deployment setup for Cloudflare Pages using Pages Functions as a reverse proxy to your existing FastAPI backend. Your Python code and data remain unchanged.
+
+### Added structure
+
+- `functions/[[path]].js`: Universal proxy forwarding all routes to your backend at `ORIGIN_URL`. Includes permissive CORS.
+- `public/index.html`: Minimal static page to allow successful Pages deployments.
+
+### How it works
+
+- Requests to your Pages domain (e.g., `https://your-project.pages.dev/...`) are proxied to `ORIGIN_URL + <same path and query>`.
+- Example: `GET https://your-project.pages.dev/vector/health` → `GET ${ORIGIN_URL}/vector/health`.
+
+### Setup steps
+
+1. Push this repository to GitHub/GitLab.
+2. In Cloudflare dashboard: Workers & Pages → Create application → Pages → Connect to Git.
+3. Build settings:
+   - Build command: leave empty
+   - Build output directory: `public`
+4. Project → Settings → Environment Variables:
+   - Name: `ORIGIN_URL`
+   - Value: your FastAPI base URL, e.g., `https://api.example.com`.
+5. Deploy. All routes will proxy to your backend with CORS headers applied.
+
+### Notes
+
+- To proxy only specific paths (e.g., `/api/*`), move the function to `functions/api/[[path]].js` and keep static assets under `public/`.
+- No changes to Python/uvicorn code are necessary.
