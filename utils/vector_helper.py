@@ -54,7 +54,10 @@ class VectorHelper:
                 ) async for segment in RepoLoader.load_blob(task_context.blob)
             ]
         except UnicodeDecodeError as e:
-            logger.error(e)
+            logger.error(f"Unicode decode error for {task_context.relative_path}: {e}")
+            documents = []
+        except Exception as e:
+            logger.error(f"Error processing {task_context.relative_path}: {e}")
             documents = []
         if documents:
             embedding_model: ModelInstance = await ExtManager.vector.get_embedding_model()

@@ -12,4 +12,4 @@ from pydantic import BaseModel, Field
 
 class DeleteIndexRequest(BaseModel):
     repo_id: str = Field(description='仓库 ID')
-    file_id: List[str] = Field(description='仓库 ID')
+    file_ids: List[str] = Field(description='文件 ID 列表')

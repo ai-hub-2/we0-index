@@ -63,8 +63,7 @@ class BaseVector(ABC):
     def dynamic_collection_name(dimension: int) -> str:
         return f'we0_index_{settings.vector.embedding_model}_{dimension}'.replace('-', '_')
 
-    # TODO 以后这边应该从仓库数据表中读取用户的`model_provider`和`model_name`
-    #  前期先全部使用`openai`的`text-embedding-3-small`
+    # Model configuration from settings - can be extended for per-user/repo settings
     @classmethod
     async def get_embedding_model(cls):
         return await ModelFactory.get_model(

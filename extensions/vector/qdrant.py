@@ -40,38 +40,43 @@ class Qdrant(BaseVector):
                 raise ValueError(f'Unknown qdrant mode: {qdrant.mode}')
 
     async def init(self):
-        collection_names = []
-        dimension = await self.get_dimension()
-        self.collection_name = self.dynamic_collection_name(dimension)
-        collections: rest.CollectionsResponse = await self.client.get_collections()
-        for collection in collections.collections:
-            collection_names.append(collection.name)
-        if self.collection_name not in collection_names:
-            vectors_config = rest.VectorParams(
-                size=dimension,
-                distance=rest.Distance.COSINE
-            )
-            hnsw_config = rest.HnswConfigDiff(
-                m=0,
-                payload_m=16,
-                ef_construct=100,
-                full_scan_threshold=10000,
-                max_indexing_threads=0,
-                on_disk=False,
-            )
-            await self.client.create_collection(
-                collection_name=self.collection_name,
-                vectors_config=vectors_config,
-                hnsw_config=hnsw_config,
-                timeout=30
-            )
-            if settings.vector.qdrant.mode != QdrantMode.DISK:
-                await self.client.create_payload_index(
-                    self.collection_name, 'repo_id', field_schema=rest.PayloadSchemaType.KEYWORD
+        try:
+            collection_names = []
+            dimension = await self.get_dimension()
+            self.collection_name = self.dynamic_collection_name(dimension)
+            collections: rest.CollectionsResponse = await self.client.get_collections()
+            for collection in collections.collections:
+                collection_names.append(collection.name)
+            if self.collection_name not in collection_names:
+                vectors_config = rest.VectorParams(
+                    size=dimension,
+                    distance=rest.Distance.COSINE
                 )
-                await self.client.create_payload_index(
-                    self.collection_name, 'file_id', field_schema=rest.PayloadSchemaType.KEYWORD
+                hnsw_config = rest.HnswConfigDiff(
+                    m=0,
+                    payload_m=16,
+                    ef_construct=100,
+                    full_scan_threshold=10000,
+                    max_indexing_threads=0,
+                    on_disk=False,
                 )
+                await self.client.create_collection(
+                    collection_name=self.collection_name,
+                    vectors_config=vectors_config,
+                    hnsw_config=hnsw_config,
+                    timeout=30
+                )
+                if settings.vector.qdrant.mode != QdrantMode.DISK:
+                    await self.client.create_payload_index(
+                        self.collection_name, 'repo_id', field_schema=rest.PayloadSchemaType.KEYWORD
+                    )
+                    await self.client.create_payload_index(
+                        self.collection_name, 'file_id', field_schema=rest.PayloadSchemaType.KEYWORD
+                    )
+        except Exception as e:
+            from loguru import logger
+            logger.error(f"Failed to initialize Qdrant: {e}")
+            raise
 
     async def create(self, documents: List[Document]):
         repo_id = documents[0].meta.repo_id

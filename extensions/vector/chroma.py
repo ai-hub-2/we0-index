@@ -32,21 +32,27 @@ class Chroma(BaseVector):
 
     async def init(self):
         if self.client is None:
-            chroma = settings.vector.chroma
-            match chroma.mode:
-                case ChromaMode.MEMORY:
-                    self.client = chromadb.Client()
-                case ChromaMode.DISK:
-                    self.client = chromadb.PersistentClient(path=chroma.disk.path)
-                case ChromaMode.REMOTE:
-                    self.client = await chromadb.AsyncHttpClient(
-                        host=chroma.remote.host, port=chroma.remote.port, ssl=chroma.remote.ssl
-                    )
-                case _:
-                    raise ValueError(f'Unknown chroma mode: {chroma.mode}')
-            dimension = await self.get_dimension()
-            self.collection_name = self.dynamic_collection_name(dimension)
-            await self._execute_async_or_thread(func=self.client.get_or_create_collection, name=self.collection_name)
+            try:
+                chroma = settings.vector.chroma
+                match chroma.mode:
+                    case ChromaMode.MEMORY:
+                        self.client = chromadb.Client()
+                    case ChromaMode.DISK:
+                        self.client = chromadb.PersistentClient(path=chroma.disk.path)
+                    case ChromaMode.REMOTE:
+                        self.client = chromadb.AsyncHttpClient(
+                            host=chroma.remote.host, port=chroma.remote.port, ssl=chroma.remote.ssl
+                        )
+                    case _:
+                        raise ValueError(f'Unknown chroma mode: {chroma.mode}')
+                dimension = await self.get_dimension()
+                self.collection_name = self.dynamic_collection_name(dimension)
+                await self._execute_async_or_thread(func=self.client.get_or_create_collection, name=self.collection_name)
+            except Exception as e:
+                # Log the error but don't fail completely
+                from loguru import logger
+                logger.error(f"Failed to initialize Chroma: {e}")
+                raise
 
     async def create(self, documents: List[Document]):
         collection = await self._execute_async_or_thread(
@@ -80,9 +86,13 @@ class Chroma(BaseVector):
             }
         )
         metadatas = results.get('metadatas', [])
-        if len(metadatas) == 0:
+        if not metadatas or len(metadatas) == 0:
             return []
-        metas = metadatas[0]
+        # Handle the case where metadatas is a list of lists
+        if isinstance(metadatas[0], list):
+            metas = metadatas[0]
+        else:
+            metas = metadatas
         return [DocumentMeta.model_validate(meta) for meta in metas]
 
     async def drop(self, repo_id: str):

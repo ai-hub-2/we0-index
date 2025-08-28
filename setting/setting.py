@@ -68,7 +68,7 @@ class QdrantSettings(BaseSettings):
 
 
 class ChromaDiskSettings(BaseSettings):
-    path: str = Field(default=Constants.Path.QDRANT_DEFAULT_DISK_PATH)
+    path: str = Field(default=Constants.Path.CHROMA_DEFAULT_DISK_PATH)
 
     @model_validator(mode='before')
     def handle_path(self):
@@ -125,7 +125,7 @@ class AppSettings(BaseSettings):
     we0_index: We0IndexSettings | None = Field(default=None, alias='we0-index')
 
     model_config = SettingsConfigDict(
-        yaml_file=Constants.Path.YAML_FILE_PATH,
+        yaml_file=Constants.Path.get_yaml_file_path(),
         yaml_file_encoding='utf-8',
         extra='ignore'
     )

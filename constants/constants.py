@@ -25,10 +25,14 @@ class Constants:
         CHROMA_DEFAULT_DISK_PATH: str = os.path.join(ROOT_PATH, 'vector', 'chroma')
 
         # We0 CONFIG
-        load_dotenv(ENV_FILE_PATH)
-        YAML_FILE_PATH: str = find_dotenv(
-            filename=os.path.join(
-                RESOURCE_PATH,
-                f"{os.environ.get('WE0_INDEX_ENV', 'dev')}.yaml"
-            )
-        )
+        @classmethod
+        def get_yaml_file_path(cls) -> str:
+            """Get YAML configuration file path with proper environment handling"""
+            # Load environment variables first
+            load_dotenv(cls.ENV_FILE_PATH)
+            
+            env_name = os.environ.get('WE0_INDEX_ENV', 'dev')
+            yaml_file = os.path.join(cls.RESOURCE_PATH, f"{env_name}.yaml")
+            
+            # Use find_dotenv to ensure the file exists
+            return find_dotenv(filename=yaml_file) or yaml_file
