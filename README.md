@@ -12,6 +12,7 @@ A Python-based code indexing engine similar to Cursor, designed to transform Git
 - **Flexible Backends**: Supports multiple vector database backends and embedding service providers
 - **MCP Integration**: Built-in support for MCP (Model Context Protocol) service calls
 - **Deployment Ready**: Flexible deployment options for different environments
+- **Cloudflare Pages**: Automatic deployment with reverse proxy to FastAPI backend
 
 ## 📋 Requirements
 
@@ -110,7 +111,55 @@ The MCP service runs with streamable-http transport by default and can be integr
 - `--transport stdio`: Use standard input/output transport
 - `--transport sse`: Use sse transport
 
+## 🚀 Deploy to Cloudflare Pages (Free + Auto-Deploy)
 
+This repository includes automatic deployment to Cloudflare Pages using GitHub Actions. Your Python code and data remain unchanged.
+
+### Automatic Deployment Setup
+
+1. **Fork/Clone this repository** to your GitHub account
+2. **Add GitHub Secrets** in your repository settings:
+   - Go to Settings → Secrets and variables → Actions
+   - Add `CLOUDFLARE_API_TOKEN`: Your Cloudflare API token with Pages:Edit permissions
+   - Add `CLOUDFLARE_ACCOUNT_ID`: Your Cloudflare Account ID (found in dashboard)
+3. **Update ORIGIN_URL** in `wrangler.toml`:
+   - Replace `https://your-backend-url.com` with your actual FastAPI backend URL
+4. **Push to main branch** - deployment will start automatically!
+
+### Manual Deployment (Alternative)
+
+If you prefer manual deployment:
+
+1. Push this repository to GitHub/GitLab
+2. In Cloudflare dashboard: Workers & Pages → Create application → Pages → Connect to Git
+3. Build settings:
+   - Build command: leave empty
+   - Build output directory: `public`
+4. Project → Settings → Environment Variables:
+   - Name: `ORIGIN_URL`
+   - Value: your FastAPI base URL
+5. Deploy
+
+### How it works
+
+- **Automatic**: Every push to main branch triggers GitHub Actions deployment
+- **Proxy**: All requests to Pages domain are proxied to your FastAPI backend
+- **CORS**: Built-in CORS handling for cross-origin requests
+- **Zero Changes**: No modifications to your Python code or data
+
+### Structure
+
+- `functions/[[path]].js`: Universal proxy function
+- `public/index.html`: Static landing page
+- `.github/workflows/`: GitHub Actions for auto-deployment
+- `wrangler.toml`: Cloudflare configuration
+
+### Testing
+
+After deployment, test your API:
+```bash
+curl -i https://your-project.pages.dev/vector/health
+```
 
 ## 🏗️ Architecture
 
@@ -136,8 +185,6 @@ We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-
-
 ## 📚 Documentation
 
 For detailed documentation, please visit our [Documentation Site](https://docs.we0-dev.com) or check the `docs/` directory.
@@ -161,34 +208,3 @@ If you encounter any issues, please [create an issue](https://github.com/we0-dev
 ---
 
 **Made with ❤️ by the We0-dev Team**
-
-## Deploy to Cloudflare Pages (Free)
-
-This repository includes a zero-change deployment setup for Cloudflare Pages using Pages Functions as a reverse proxy to your existing FastAPI backend. Your Python code and data remain unchanged.
-
-### Added structure
-
-- `functions/[[path]].js`: Universal proxy forwarding all routes to your backend at `ORIGIN_URL`. Includes permissive CORS.
-- `public/index.html`: Minimal static page to allow successful Pages deployments.
-
-### How it works
-
-- Requests to your Pages domain (e.g., `https://your-project.pages.dev/...`) are proxied to `ORIGIN_URL + <same path and query>`.
-- Example: `GET https://your-project.pages.dev/vector/health` → `GET ${ORIGIN_URL}/vector/health`.
-
-### Setup steps
-
-1. Push this repository to GitHub/GitLab.
-2. In Cloudflare dashboard: Workers & Pages → Create application → Pages → Connect to Git.
-3. Build settings:
-   - Build command: leave empty
-   - Build output directory: `public`
-4. Project → Settings → Environment Variables:
-   - Name: `ORIGIN_URL`
-   - Value: your FastAPI base URL, e.g., `https://api.example.com`.
-5. Deploy. All routes will proxy to your backend with CORS headers applied.
-
-### Notes
-
-- To proxy only specific paths (e.g., `/api/*`), move the function to `functions/api/[[path]].js` and keep static assets under `public/`.
-- No changes to Python/uvicorn code are necessary.

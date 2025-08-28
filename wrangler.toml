@@ -2,6 +2,7 @@ name = "we0-index-proxy"
 compatibility_date = "2024-01-01"
 compatibility_flags = ["nodejs_compat"]
 
+# Pages configuration
 pages_build_output_dir = "public"
 
 [env.production]
@@ -10,8 +11,22 @@ name = "we0-index-proxy"
 [env.production.vars]
 ORIGIN_URL = "https://your-backend-url.com"  # Replace with your actual backend URL
 
-[[env.production.pages_functions]]
+# Pages Functions configuration
+[env.production.pages_functions]
 directory = "functions"
 
 [env.production.pages]
+output_dir = "public"
+
+# Development environment
+[env.development]
+name = "we0-index-proxy-dev"
+
+[env.development.vars]
+ORIGIN_URL = "https://your-backend-url.com"  # Replace with your actual backend URL
+
+[env.development.pages_functions]
+directory = "functions"
+
+[env.development.pages]
 output_dir = "public"
