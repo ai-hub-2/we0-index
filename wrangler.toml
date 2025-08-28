@@ -18,15 +18,15 @@ directory = "functions"
 [env.production.pages]
 output_dir = "public"
 
-# Development environment
-[env.development]
-name = "we0-index-proxy-dev"
+# Preview environment
+[env.preview]
+name = "we0-index-proxy-preview"
 
-[env.development.vars]
+[env.preview.vars]
 ORIGIN_URL = "https://your-backend-url.com"  # Replace with your actual backend URL
 
-[env.development.pages_functions]
+[env.preview.pages_functions]
 directory = "functions"
 
-[env.development.pages]
+[env.preview.pages]
 output_dir = "public"
