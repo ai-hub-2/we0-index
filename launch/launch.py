@@ -22,6 +22,7 @@ from extensions import ext_manager
 from router.git_router import git_router
 from router.vector_router import vector_router
 from setting.setting import get_we0_index_settings
+from utils.health_check import comprehensive_health_check
 
 settings = get_we0_index_settings()
 
@@ -73,6 +74,21 @@ app.include_router(vector_router, prefix="/vector", tags=["vector"])
 app.include_router(git_router, prefix="/git", tags=["git"])
 
 
+@app.get("/health", tags=["health"])
+async def health_check():
+    """Health check endpoint"""
+    try:
+        health_status = await comprehensive_health_check()
+        status_code = 200 if health_status["overall_status"] == "healthy" else 503
+        return JSONResponse(content=health_status, status_code=status_code)
+    except Exception as e:
+        logger.exception("Health check failed")
+        return JSONResponse(
+            content={"status": "unhealthy", "error": str(e)}, 
+            status_code=503
+        )
+
+
 @app.exception_handler(CommonException)
 async def common_exception_handler(request: Request, exc: CommonException):
     error = Result.failed(code=-1, message=exc.message)
@@ -87,10 +103,4 @@ async def exception_handler(request: Request, exc: Exception):
     return JSONResponse(content=jsonable_encoder(error))
 
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=['*'],
-    allow_credentials=True,
-    allow_methods=['*'],
-    allow_headers=['*'],
-)
+# CORS middleware already added in create_app function

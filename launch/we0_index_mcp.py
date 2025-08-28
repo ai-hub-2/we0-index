@@ -23,9 +23,11 @@ sider_settings = get_we0_index_settings()
 
 @asynccontextmanager
 async def lifespan(server: Server[LifespanResultT, RequestT]) -> AsyncIterator[object]:
+    # Initialize vector extension on startup
     await ext_manager.init_vector()
     yield {}
-    await ext_manager.init_vector()
+    # Cleanup on shutdown (if needed)
+    # For now, no specific cleanup is required
 
 
 def create_fast_mcp() -> FastMCP:

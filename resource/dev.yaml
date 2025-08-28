@@ -20,7 +20,7 @@ we0-index:
       host: localhost
       port: 5432
       user: root
-      password: password
+      password: "${POSTGRES_PASSWORD:-password}"
     qdrant:
       mode: disk
       disk:

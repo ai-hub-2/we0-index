@@ -120,14 +120,16 @@ async def clone_and_index(git_index_request: GitIndexRequest) -> Result[AddIndex
 
         async with aiofiles.tempfile.TemporaryDirectory() as tmp_dir:
             try:
+                # Clone repository with proper error handling
                 await asyncio.to_thread(
                     Repo.clone_from,
                     auth_repo_url,
                     tmp_dir
                 )
             except Exception as e:
-                logger.error(f'{type(e).__name__}: {e}')
-                raise e
+                error_msg = f"Failed to clone repository {git_index_request.repo_url}: {type(e).__name__}: {e}"
+                logger.error(error_msg)
+                return Result.failed(message=error_msg)
             # 遍历并处理文件
             tasks = []
             for root, dirs, files in os.walk(tmp_dir):

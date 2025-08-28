@@ -57,17 +57,23 @@ class PgVector(BaseVector):
         )
 
     async def init(self):
-        async with self.client.begin() as conn:
-            dimension = await self.get_dimension()
-            if dimension > 2000:
-                dimension = 2000
-                self.normalized = True
-            self.table_name = self.dynamic_collection_name(dimension)
-            await conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
-            await conn.execute(text(SQL_CREATE_TABLE(self.table_name, dimension)))
-            await conn.execute(text(SQL_CREATE_REPO_FILE_INDEX(self.table_name)))
-            await conn.execute(text(SQL_CREATE_FILE_INDEX(self.table_name)))
-            await conn.execute(text(SQL_CREATE_EMBEDDING_INDEX(self.table_name)))
+        try:
+            async with self.client.begin() as conn:
+                dimension = await self.get_dimension()
+                if dimension > 2000:
+                    dimension = 2000
+                    self.normalized = True
+                self.table_name = self.dynamic_collection_name(dimension)
+                await conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
+                await conn.execute(text(SQL_CREATE_TABLE(self.table_name, dimension)))
+                await conn.execute(text(SQL_CREATE_REPO_FILE_INDEX(self.table_name)))
+                await conn.execute(text(SQL_CREATE_FILE_INDEX(self.table_name)))
+                await conn.execute(text(SQL_CREATE_EMBEDDING_INDEX(self.table_name)))
+        except Exception as e:
+            # Log the error but don't fail completely
+            from loguru import logger
+            logger.error(f"Failed to initialize PgVector: {e}")
+            raise
 
     async def _create(self, repo_id: str, documents: List[Document]):
         stmt = text(

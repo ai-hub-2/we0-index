@@ -11,6 +11,16 @@ import re
 
 
 def parse_git_url(git_url):
+    """Parse Git URL and extract domain, owner, and repository name.
+    
+    Supports multiple platforms and URL formats (SSH, HTTPS).
+    
+    Args:
+        git_url (str): Git repository URL
+        
+    Returns:
+        tuple: (domain, owner, repo) or (None, None, None) if invalid
+    """
     # 支持的平台域名
     platforms = [
         'github.com',
