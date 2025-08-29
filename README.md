@@ -99,6 +99,20 @@ python main.py --mode mcp --transport sse
 
 The MCP service runs with streamable-http transport by default and can be integrated with MCP-compatible AI clients.
 
+### Cloudflare Pages (Static) Deployment
+
+This repository primarily runs a Python service (FastAPI/MCP). If you deploy to Cloudflare Pages, there is no build step and Pages will only host static assets.
+
+- Static output directory: `public/`
+- We include a minimal `public/index.html` so the Pages deployment succeeds and can link to docs.
+- The FastAPI service must be deployed separately (e.g., Docker, VM, or Cloudflare Workers/ai with an adapter), and is not served by Pages.
+
+For local API development, keep using:
+
+```bash
+python main.py --mode fastapi
+```
+
 ### Runtime Parameters
 
 **Mode Parameters**:
