@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>We0-index</title>
+    <style>
+      :root { color-scheme: light dark; }
+      body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Arial, "Apple Color Emoji", "Segoe UI Emoji"; margin: 0; padding: 0 16px; line-height: 1.5; }
+      .container { max-width: 920px; margin: 6rem auto; }
+      h1 { font-size: 2rem; margin: 0 0 0.5rem; }
+      .muted { opacity: 0.7; }
+      code { background: rgba(127,127,127,0.15); padding: 0.2em 0.35em; border-radius: 6px; }
+      pre { background: rgba(127,127,127,0.15); padding: 12px; border-radius: 8px; overflow: auto; }
+      a { color: inherit; }
+      .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin-top: 24px; }
+      .card { border: 1px solid rgba(127,127,127,0.25); border-radius: 10px; padding: 16px; }
+    </style>
+  </head>
+  <body>
+    <main class="container">
+      <h1>We0-index</h1>
+      <p class="muted">Code indexing engine with FastAPI and MCP modes.</p>
+
+      <div class="cards">
+        <section class="card">
+          <h2>FastAPI service</h2>
+          <p>This site is a static landing page for Cloudflare Pages. The API runs as a separate FastAPI service.</p>
+          <p>Run locally:</p>
+          <pre><code>python main.py --mode fastapi</code></pre>
+        </section>
+
+        <section class="card">
+          <h2>MCP service</h2>
+          <p>Start the MCP server:</p>
+          <pre><code>python main.py --mode mcp</code></pre>
+        </section>
+
+        <section class="card">
+          <h2>Docs & Source</h2>
+          <ul>
+            <li><a href="https://docs.we0-dev.com" rel="noopener">Documentation</a></li>
+            <li><a href="https://github.com/we0-dev/we0-index" rel="noopener">GitHub Repository</a></li>
+          </ul>
+        </section>
+      </div>
+
+      <p class="muted">Deploy note: Configure your FastAPI runtime separately (e.g., Docker, VM, or managed Python host). Cloudflare Pages only serves these static assets.</p>
+    </main>
+  </body>
+  </html>
+
