@@ -11,13 +11,14 @@ services:
     environment:
       - NODE_ENV=development
       - NEXT_PUBLIC_API_URL=http://localhost:8080
+      - NEXT_PUBLIC_WS_URL=ws://localhost:8080
     volumes:
       - ./frontend:/app
       - /app/node_modules
     depends_on:
       - backend
     networks:
-      - collabhub-network
+      - rapidtools-network
 
   # Backend API
   backend:
@@ -27,45 +28,45 @@ services:
     ports:
       - "8080:8080"
     environment:
-      - GIN_MODE=debug
-      - DB_HOST=postgres
-      - DB_PORT=5432
-      - DB_NAME=collabhub
-      - DB_USER=collabhub
-      - DB_PASSWORD=collabhub123
-      - REDIS_URL=redis:6379
-      - JWT_SECRET=your-super-secret-jwt-key
+      - NODE_ENV=development
+      - PORT=8080
+      - DATABASE_URL=postgresql://rapidtools:rapidtools123@postgres:5432/rapidtools
+      - REDIS_URL=redis://redis:6379
+      - RABBITMQ_URL=amqp://rapidtools:rapidtools123@rabbitmq:5672
+      - JWT_SECRET=your-super-secret-jwt-key-change-in-production
+      - JWT_REFRESH_SECRET=your-super-secret-refresh-key-change-in-production
+      - CORS_ORIGIN=http://localhost:3000
+      - SMTP_HOST=mailhog
+      - SMTP_PORT=1025
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_ACCESS_KEY=test
+      - AWS_REGION=us-east-1
+      - STRIPE_SECRET_KEY=sk_test_123
+      - GOOGLE_CLIENT_ID=test
+      - GOOGLE_CLIENT_SECRET=test
     volumes:
       - ./backend:/app
+      - /app/node_modules
     depends_on:
       - postgres
       - redis
+      - rabbitmq
     networks:
-      - collabhub-network
+      - rapidtools-network
 
   # API Gateway
   api-gateway:
-    image: kong:3.4
+    image: nginx:alpine
     ports:
-      - "8000:8000"
-      - "8443:8443"
-      - "8001:8001"
-      - "8444:8444"
-    environment:
-      - KONG_DATABASE=off
-      - KONG_PROXY_ACCESS_LOG=/dev/stdout
-      - KONG_ADMIN_ACCESS_LOG=/dev/stdout
-      - KONG_PROXY_ERROR_LOG=/dev/stderr
-      - KONG_ADMIN_ERROR_LOG=/dev/stderr
-      - KONG_ADMIN_LISTEN=0.0.0.0:8001
-      - KONG_ADMIN_GUI_URL=http://localhost:8002
+      - "80:80"
+      - "443:443"
     volumes:
-      - ./api-gateway/kong.yml:/kong.yml
-    command: kong start
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./nginx/ssl:/etc/nginx/ssl
     depends_on:
       - backend
     networks:
-      - collabhub-network
+      - rapidtools-network
 
   # PostgreSQL Database
   postgres:
@@ -73,14 +74,14 @@ services:
     ports:
       - "5432:5432"
     environment:
-      - POSTGRES_DB=collabhub
-      - POSTGRES_USER=collabhub
-      - POSTGRES_PASSWORD=collabhub123
+      - POSTGRES_DB=rapidtools
+      - POSTGRES_USER=rapidtools
+      - POSTGRES_PASSWORD=rapidtools123
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./backend/migrations:/docker-entrypoint-initdb.d
+      - ./backend/prisma/migrations:/docker-entrypoint-initdb.d
     networks:
-      - collabhub-network
+      - rapidtools-network
 
   # Redis Cache
   redis:
@@ -90,7 +91,7 @@ services:
     volumes:
       - redis_data:/data
     networks:
-      - collabhub-network
+      - rapidtools-network
 
   # RabbitMQ Message Queue
   rabbitmq:
@@ -99,12 +100,12 @@ services:
       - "5672:5672"
       - "15672:15672"
     environment:
-      - RABBITMQ_DEFAULT_USER=collabhub
-      - RABBITMQ_DEFAULT_PASS=collabhub123
+      - RABBITMQ_DEFAULT_USER=rapidtools
+      - RABBITMQ_DEFAULT_PASS=rapidtools123
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
     networks:
-      - collabhub-network
+      - rapidtools-network
 
   # Monitoring Stack
   prometheus:
@@ -122,7 +123,7 @@ services:
       - '--storage.tsdb.retention.time=200h'
       - '--web.enable-lifecycle'
     networks:
-      - collabhub-network
+      - rapidtools-network
 
   grafana:
     image: grafana/grafana:latest
@@ -137,7 +138,7 @@ services:
     depends_on:
       - prometheus
     networks:
-      - collabhub-network
+      - rapidtools-network
 
   # Elasticsearch for logging
   elasticsearch:
@@ -151,7 +152,7 @@ services:
     volumes:
       - elasticsearch_data:/usr/share/elasticsearch/data
     networks:
-      - collabhub-network
+      - rapidtools-network
 
   kibana:
     image: docker.elastic.co/kibana/kibana:8.8.0
@@ -162,7 +163,42 @@ services:
     depends_on:
       - elasticsearch
     networks:
-      - collabhub-network
+      - rapidtools-network
+
+  # Mail testing
+  mailhog:
+    image: mailhog/mailhog:latest
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+    networks:
+      - rapidtools-network
+
+  # MinIO for file storage
+  minio:
+    image: minio/minio:latest
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      - MINIO_ROOT_USER=rapidtools
+      - MINIO_ROOT_PASSWORD=rapidtools123
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"
+    networks:
+      - rapidtools-network
+
+  # Jaeger for distributed tracing
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    ports:
+      - "16686:16686"
+      - "14268:14268"
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+    networks:
+      - rapidtools-network
 
 volumes:
   postgres_data:
@@ -171,7 +207,8 @@ volumes:
   prometheus_data:
   grafana_data:
   elasticsearch_data:
+  minio_data:
 
 networks:
-  collabhub-network:
+  rapidtools-network:
     driver: bridge

@@ -1,0 +1,64 @@
+{
+  "name": "rapidtools-platform",
+  "version": "1.0.0",
+  "description": "Instant digital tool creation platform inspired by same.new",
+  "private": true,
+  "workspaces": [
+    "frontend",
+    "backend",
+    "sdk/javascript",
+    "cli"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev:frontend\" \"npm run dev:backend\"",
+    "dev:frontend": "npm run dev --workspace=frontend",
+    "dev:backend": "npm run dev --workspace=backend",
+    "build": "npm run build --workspaces",
+    "test": "npm run test --workspaces",
+    "lint": "npm run lint --workspaces",
+    "db:migrate": "npm run db:migrate --workspace=backend",
+    "db:seed": "npm run db:seed --workspace=backend",
+    "docker:build": "docker-compose build",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "docker:logs": "docker-compose logs -f",
+    "k8s:deploy": "kubectl apply -f k8s/",
+    "k8s:delete": "kubectl delete -f k8s/",
+    "terraform:init": "terraform -chdir=terraform init",
+    "terraform:plan": "terraform -chdir=terraform plan",
+    "terraform:apply": "terraform -chdir=terraform apply",
+    "release": "standard-version"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.0",
+    "husky": "^8.0.3",
+    "lint-staged": "^14.0.1",
+    "standard-version": "^9.5.0",
+    "@commitlint/cli": "^17.7.0",
+    "@commitlint/config-conventional": "^17.7.0"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/rapidtools/platform.git"
+  },
+  "keywords": [
+    "rapid-tools",
+    "tool-builder",
+    "collaboration",
+    "platform",
+    "same-new",
+    "digital-tools",
+    "real-time",
+    "api"
+  ],
+  "author": "RapidTools Team",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/rapidtools/platform/issues"
+  },
+  "homepage": "https://rapidtools.com"
+}

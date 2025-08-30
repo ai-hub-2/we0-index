@@ -1,0 +1,344 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User Management
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  username      String   @unique
+  firstName     String?
+  lastName      String?
+  avatar        String?
+  bio           String?
+  isVerified    Boolean  @default(false)
+  isActive      Boolean  @default(true)
+  role          UserRole @default(USER)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  tools         Tool[]
+  collaborations Collaboration[]
+  comments      Comment[]
+  likes         Like[]
+  followers     Follow[] @relation("UserFollowers")
+  following     Follow[] @relation("UserFollowing")
+  notifications Notification[]
+  sessions      Session[]
+  apiKeys       ApiKey[]
+  organizations OrganizationMember[]
+  webhooks      Webhook[]
+
+  @@map("users")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  userId       String
+  token        String   @unique
+  refreshToken String   @unique
+  expiresAt    DateTime
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model ApiKey {
+  id          String   @id @default(cuid())
+  userId      String
+  name        String
+  key         String   @unique
+  permissions String[] // JSON array of permissions
+  isActive    Boolean  @default(true)
+  lastUsedAt  DateTime?
+  expiresAt   DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("api_keys")
+}
+
+// Tool Management
+model Tool {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  slug        String   @unique
+  type        ToolType
+  config      Json     // Tool configuration
+  code        String?  // Custom code if any
+  isPublic    Boolean  @default(false)
+  isPublished Boolean  @default(false)
+  version     Int      @default(1)
+  views       Int      @default(0)
+  likes       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  publishedAt DateTime?
+
+  // Relations
+  authorId    String
+  author      User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  collaborations Collaboration[]
+  comments    Comment[]
+  likes       Like[]
+  deployments Deployment[]
+  versions    ToolVersion[]
+  tags        ToolTag[]
+  analytics   ToolAnalytics[]
+
+  @@map("tools")
+}
+
+model ToolVersion {
+  id        String   @id @default(cuid())
+  toolId    String
+  version   Int
+  config    Json
+  code      String?
+  createdAt DateTime @default(now())
+
+  tool      Tool     @relation(fields: [toolId], references: [id], onDelete: Cascade)
+
+  @@unique([toolId, version])
+  @@map("tool_versions")
+}
+
+model ToolTag {
+  id    String @id @default(cuid())
+  name  String @unique
+  color String @default("#3B82F6")
+
+  tools Tool[]
+
+  @@map("tool_tags")
+}
+
+// Collaboration
+model Collaboration {
+  id        String           @id @default(cuid())
+  toolId    String
+  userId    String
+  role      CollaborationRole
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  tool      Tool             @relation(fields: [toolId], references: [id], onDelete: Cascade)
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([toolId, userId])
+  @@map("collaborations")
+}
+
+// Social Features
+model Comment {
+  id        String   @id @default(cuid())
+  content   String
+  toolId    String
+  userId    String
+  parentId  String?  // For nested comments
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tool      Tool     @relation(fields: [toolId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parent    Comment? @relation("CommentReplies", fields: [parentId], references: [id])
+  replies   Comment[] @relation("CommentReplies")
+
+  @@map("comments")
+}
+
+model Like {
+  id        String   @id @default(cuid())
+  toolId    String
+  userId    String
+  createdAt DateTime @default(now())
+
+  tool      Tool     @relation(fields: [toolId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([toolId, userId])
+  @@map("likes")
+}
+
+model Follow {
+  id          String   @id @default(cuid())
+  followerId  String
+  followingId String
+  createdAt   DateTime @default(now())
+
+  follower    User     @relation("UserFollowers", fields: [followerId], references: [id], onDelete: Cascade)
+  following   User     @relation("UserFollowing", fields: [followingId], references: [id], onDelete: Cascade)
+
+  @@unique([followerId, followingId])
+  @@map("follows")
+}
+
+// Deployment
+model Deployment {
+  id          String   @id @default(cuid())
+  toolId      String
+  domain      String?  @unique
+  subdomain   String?  @unique
+  status      DeploymentStatus @default(PENDING)
+  config      Json
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  deployedAt  DateTime?
+
+  tool        Tool     @relation(fields: [toolId], references: [id], onDelete: Cascade)
+
+  @@map("deployments")
+}
+
+// Analytics
+model ToolAnalytics {
+  id        String   @id @default(cuid())
+  toolId    String
+  date      DateTime
+  views     Int      @default(0)
+  uniqueViews Int    @default(0)
+  interactions Int   @default(0)
+  createdAt DateTime @default(now())
+
+  tool      Tool     @relation(fields: [toolId], references: [id], onDelete: Cascade)
+
+  @@unique([toolId, date])
+  @@map("tool_analytics")
+}
+
+// Organizations
+model Organization {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  description String?
+  avatar      String?
+  isPublic    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  members     OrganizationMember[]
+  tools       OrganizationTool[]
+
+  @@map("organizations")
+}
+
+model OrganizationMember {
+  id             String             @id @default(cuid())
+  organizationId String
+  userId         String
+  role           OrganizationRole
+  joinedAt       DateTime           @default(now())
+
+  organization   Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user           User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, userId])
+  @@map("organization_members")
+}
+
+model OrganizationTool {
+  id             String @id @default(cuid())
+  organizationId String
+  toolId         String
+  isPublic       Boolean @default(false)
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  tool           Tool         @relation(fields: [toolId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, toolId])
+  @@map("organization_tools")
+}
+
+// Notifications
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  type      NotificationType
+  title     String
+  message   String
+  data      Json?
+  isRead    Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
+}
+
+// Webhooks
+model Webhook {
+  id        String   @id @default(cuid())
+  userId    String
+  name      String
+  url       String
+  events    String[] // JSON array of event types
+  secret    String
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("webhooks")
+}
+
+// Enums
+enum UserRole {
+  USER
+  ADMIN
+  MODERATOR
+}
+
+enum ToolType {
+  CALCULATOR
+  FORM
+  CHART
+  CODE_SNIPPET
+  CUSTOM_APP
+  INTEGRATION
+}
+
+enum CollaborationRole {
+  OWNER
+  EDITOR
+  VIEWER
+}
+
+enum DeploymentStatus {
+  PENDING
+  BUILDING
+  DEPLOYED
+  FAILED
+  CANCELLED
+}
+
+enum OrganizationRole {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+enum NotificationType {
+  TOOL_LIKED
+  TOOL_COMMENTED
+  COLLABORATION_INVITE
+  DEPLOYMENT_SUCCESS
+  DEPLOYMENT_FAILED
+  SYSTEM_UPDATE
+}
